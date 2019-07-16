@@ -44,6 +44,27 @@
         </div>
     </div>
 
+    <div class="modal fade" id="results-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Your Top Match</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center" id="results">
+                    <h4 id="match-name"></h4>
+                    <div class="text-center" id="match-photo"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 <script>
@@ -59,6 +80,44 @@
         "I like to tidy up.",
         "I believe that others have good intentions."
     ]
+
+    function compareFriends(newFriend) {
+        $("#match-name, #match-photo").empty();
+        
+        var newFriendRes = newFriend.responses;
+
+        var topMatch = {
+                name: "someone",
+                photo: "https://picsum.photos/200",
+                total: 50
+            };
+
+        $.ajax({ url: "api/friendData", method: "GET" }).then(function (friendData) {
+
+            for (var i = 0; i < friendData.length - 1; i++) {
+                var currentFriend = friendData[i];
+                var diff = [];
+
+                for (var j = 0; j < newFriendRes.length; j++) {
+                    diff.push(Math.abs(newFriendRes[j] - currentFriend.responses[j]));
+                }
+
+                var totalDiff = diff.reduce((a, b) => a + b);
+
+                if (totalDiff < topMatch.total) {
+                    topMatch.name = friendData[i].name;
+                    topMatch.photo = friendData[i].photo;
+                    topMatch.total = totalDiff;
+                }
+    
+            }
+            console.log(topMatch);
+        })
+
+        $("#match-name").text(topMatch.name);
+        $("#match-photo").append($("<img>").attr("src", topMatch.photo));
+
+    }
 
     function writeQuestions() {
         for (var i = 0; i < questions.length; i++) {
@@ -100,18 +159,19 @@
             ]
         }
 
-       $.post("/api/friendData", newFriend,
-       function(data) {
-           if (data) {
-               //if posted, then run a function to find most compatable friend
-               alert("YAY FRIEND!")
-           }
-       })
+        compareFriends(newFriend);
+
+        $.post("/api/friendData", newFriend,
+            function (data) {
+                if (data) {
+                    //if posted, then run a function to find most compatable friend
+                    $("#results-modal").modal("show");
+                }
+            })
+
     })
-
-
-
     writeQuestions();
+
 </script>
 
 </html>
