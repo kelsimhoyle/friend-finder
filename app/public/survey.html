@@ -35,6 +35,14 @@
                         <input type="pic" class="form-control" id="photo">
                     </div>
                     <div id="questions">
+                        <div class="row">
+                            <div class="col-md-2 offset-md-6">
+                                <p>Strongly Disagree</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="text-right">Strongly Agree</p>
+                            </div>
+                        </div>
                         <!-- Where the questions will append -->
                     </div>
 
@@ -44,12 +52,20 @@
         </div>
     </div>
 
+
+    <footer class="card-footer">
+        <div class="container">
+            <p><a href="/api/friendData" target="_blank">API Friends List</a> | <a
+                    href="https://github.com/kelsimhoyle/friend-finder" target="_blank">GitHub Repository</a></p>
+        </div>
+    </footer>
+
     <div class="modal fade" id="results-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Your Top Match</h5>
+                    <h5 class="modal-title" id="title"></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -57,6 +73,7 @@
                 <div class="modal-body text-center" id="results">
                     <h4 id="match-name"></h4>
                     <div class="text-center" id="match-photo"></div>
+                    <p id="modal-text"></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -68,62 +85,10 @@
 </body>
 
 <script>
-    var questions = [
-        "I try to follow the rules.",
-        "I talk to a lot of different people at parties.",
-        "I am passionate about causes.",
-        "I love action.",
-        "I love to daydream.",
-        "I enjoy being part of a group.",
-        "I find it difficult to approach others.",
-        "I choose my words with care.",
-        "I like to tidy up.",
-        "I believe that others have good intentions."
-    ]
-
-    function compareFriends(newFriend) {
-        $("#match-name, #match-photo").empty();
-        
-        var newFriendRes = newFriend.responses;
-
-        var topMatch = {
-                name: "someone",
-                photo: "https://picsum.photos/200",
-                total: 50
-            };
-
-        $.ajax({ url: "api/friendData", method: "GET" }).then(function (friendData) {
-
-            for (var i = 0; i < friendData.length - 1; i++) {
-                var currentFriend = friendData[i];
-                var diff = [];
-
-                for (var j = 0; j < newFriendRes.length; j++) {
-                    diff.push(Math.abs(newFriendRes[j] - currentFriend.responses[j]));
-                }
-
-                var totalDiff = diff.reduce((a, b) => a + b);
-
-                if (totalDiff < topMatch.total) {
-                    topMatch.name = friendData[i].name;
-                    topMatch.photo = friendData[i].photo;
-                    topMatch.total = totalDiff;
-                }
-    
-            }
-            console.log(topMatch);
-        })
-
-        $("#match-name").text(topMatch.name);
-        $("#match-photo").append($("<img>").attr("src", topMatch.photo));
-
-    }
-
-    function writeQuestions() {
-        for (var i = 0; i < questions.length; i++) {
+    $.get("/api/questions").then(function (data) {
+        for (var i = 0; i < data.length; i++) {
             var formGroup = $("<div>").addClass("form-group").attr("id", `q${i + 1}`);
-            var label = $("<label>").addClass("control-label col-md-5").text(questions[i]);
-
+            var label = $("<label>").addClass("control-label col-md-6").text(data[i]);
 
             formGroup.append(label);
 
@@ -137,40 +102,74 @@
 
             $("#questions").append(formGroup);
         }
-    }
+    })
 
     $("#submit").on("click", function (event) {
         event.preventDefault();
 
-        var newFriend = {
-            "name": $("#name").val().trim(),
-            "photo": $("#photo").val().trim(),
-            "responses": [
-                parseInt($("input[name=q1]:checked").val()),
-                parseInt($("input[name=q2]:checked").val()),
-                parseInt($("input[name=q3]:checked").val()),
-                parseInt($("input[name=q4]:checked").val()),
-                parseInt($("input[name=q5]:checked").val()),
-                parseInt($("input[name=q6]:checked").val()),
-                parseInt($("input[name=q7]:checked").val()),
-                parseInt($("input[name=q8]:checked").val()),
-                parseInt($("input[name=q9]:checked").val()),
-                parseInt($("input[name=q10]:checked").val())
-            ]
-        }
+        var isValid = false;
 
-        compareFriends(newFriend);
+        var validate = function () {
+            $(".form-control").each(function () {
+                if ($(this).val() === "") {
+                    isValid = false;
+                } else {
+                    isValid = true;
+                }
+            });
 
-        $.post("/api/friendData", newFriend,
-            function (data) {
-                if (data) {
-                    //if posted, then run a function to find most compatable friend
-                    $("#results-modal").modal("show");
+            $("form-check-input").each(function () {
+                if ($(this).val() === "") {
+                    isValid = false;
+                } else {
+                    isValid = true;
                 }
             })
 
+            return isValid;
+        }
+
+        if (validate()) {
+
+            var newFriend = {
+                "name": $("#name").val().trim(),
+                "photo": $("#photo").val().trim(),
+                "responses": [
+                    parseInt($("input[name=q1]:checked").val()),
+                    parseInt($("input[name=q2]:checked").val()),
+                    parseInt($("input[name=q3]:checked").val()),
+                    parseInt($("input[name=q4]:checked").val()),
+                    parseInt($("input[name=q5]:checked").val()),
+                    parseInt($("input[name=q6]:checked").val()),
+                    parseInt($("input[name=q7]:checked").val()),
+                    parseInt($("input[name=q8]:checked").val()),
+                    parseInt($("input[name=q9]:checked").val()),
+                    parseInt($("input[name=q10]:checked").val())
+                ]
+            }
+
+            $.post("/api/friendData", newFriend,
+                function (data) {
+                    if (data) {
+                        //if posted, then run a function to find most compatable friend
+                        $("#title").text("Your Top Match");
+                        $("#match-name").text(data.name);
+                        $("#match-photo").append($("<img>").attr("src", data.photo).addClass("img-fluid"));
+                    } else {
+                        $("#title").text("Oops!");
+                        $("#modal-text").text("A match was not able to be created at this time.")
+                    }
+                    $("#results-modal").modal("toggle");
+                })
+
+        } else {
+            $("#title").text("Error");
+            $("#modal-text").text("Please enter all fields");
+            $("#results-modal").modal("toggle");
+            return false;
+        }
+
     })
-    writeQuestions();
 
 </script>
 
