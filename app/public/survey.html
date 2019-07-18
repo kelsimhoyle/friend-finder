@@ -84,7 +84,28 @@
 
 </body>
 
-<script>
+<script type="text/javascript">
+    var validate = function () {
+        var isValid = false;
+        $(".form-control").each(function () {
+            if ($(this).val() === "") {
+                isValid = false;
+            } else {
+                isValid = true;
+            }
+        });
+
+        $("form-check-input").each(function () {
+            if ($(this).val() === "") {
+                isValid = false;
+            } else {
+                isValid = true;
+            }
+        })
+
+        return isValid;
+    }
+
     $.get("/api/questions").then(function (data) {
         for (var i = 0; i < data.length; i++) {
             var formGroup = $("<div>").addClass("form-group").attr("id", `q${i + 1}`);
@@ -107,27 +128,10 @@
     $("#submit").on("click", function (event) {
         event.preventDefault();
 
-        var isValid = false;
-
-        var validate = function () {
-            $(".form-control").each(function () {
-                if ($(this).val() === "") {
-                    isValid = false;
-                } else {
-                    isValid = true;
-                }
-            });
-
-            $("form-check-input").each(function () {
-                if ($(this).val() === "") {
-                    isValid = false;
-                } else {
-                    isValid = true;
-                }
-            })
-
-            return isValid;
-        }
+        $("#tite").empty();
+        $("#match-name").empty();
+        $("#match-photo").empty();
+        $("#modal-text").empty();
 
         if (validate()) {
 
@@ -150,6 +154,7 @@
 
             $.post("/api/friendData", newFriend,
                 function (data) {
+
                     if (data) {
                         //if posted, then run a function to find most compatable friend
                         $("#title").text("Your Top Match");
@@ -168,7 +173,6 @@
             $("#results-modal").modal("toggle");
             return false;
         }
-
     })
 
 </script>
