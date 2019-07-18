@@ -13,16 +13,15 @@ module.exports = function (app) {
 
         for (var i = 0; i < friendData.length; i++) {
             var currentFriend = friendData[i];
-            var diff = [];
+            var totalDiff = 0;
 
             for (var j = 0; j < newFriendRes.length; j++) {
-                diff.push(Math.abs(newFriendRes[j] - currentFriend.responses[j]));
+                totalDiff += Math.abs(newFriendRes[j] - currentFriend.responses[j]);
             }
-
-            var totalDiff = diff.reduce(function (a, b) { return a + b });
 
             if (totalDiff < currentTopMatch) {
                 topMatch = friendData[i];
+                currentTopMatch = totalDiff;
             }
         }
         friendData.push(req.body);
